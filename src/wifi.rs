@@ -23,7 +23,7 @@ impl<'a> Wifi<'a> {
         Self { wifi }
     }
 
-    pub fn connect(mut self, ssid: &str, password: &str) {
+    pub fn connect(mut self, ssid: &str, password: &str) -> BlockingWifi<EspWifi<'a>> {
         let wifi_config = Configuration::Client(ClientConfiguration {
             ssid: ssid.try_into().unwrap(),
             bssid: None,
@@ -37,6 +37,7 @@ impl<'a> Wifi<'a> {
 
         self.wifi.start().unwrap();
         self.wifi.connect().unwrap();
-        self.wifi.wait_netif_up().unwrap();
+
+        return self.wifi;
     }
 }
