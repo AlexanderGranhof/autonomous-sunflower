@@ -49,18 +49,12 @@ impl<'a> Commands<'a> {
 
     fn pump(&mut self, parts: Vec<&str>) -> Result<(), ()> {
         match parts.as_slice() {
-            ["pump", "on"] => {
-                self.pins.water_pump.set_high().unwrap();
-                return Ok(());
-            }
-            ["pump", "off"] => {
-                self.pins.water_pump.set_low().unwrap();
-                return Ok(());
-            }
             ["pump", "on", time] => {
                 self.pins.water_pump.set_high().unwrap();
 
-                FreeRtos::delay_ms(time.parse::<u32>().unwrap());
+                let time = time.parse::<u32>().unwrap().min(3000);
+
+                FreeRtos::delay_ms(time);
 
                 self.pins.water_pump.set_low().unwrap();
                 return Ok(());

@@ -1,9 +1,11 @@
-use esp_idf_svc::mqtt::client::{EspMqttClient, EspMqttEvent, MqttClientConfiguration, QoS};
+use esp_idf_hal::sys::EspError;
+use esp_idf_svc::mqtt::client::{
+    EspMqttClient, EspMqttConnection, EspMqttEvent, MqttClientConfiguration, QoS,
+};
 
 pub struct Mqtt<'a> {
-    url: &'a str,
-    config: MqttClientConfiguration<'a>,
-    pub client: Option<EspMqttClient<'a>>,
+    pub client: EspMqttClient<'a>,
+    pub connection: EspMqttConnection,
     topic: Option<&'a str>,
 }
 
@@ -14,24 +16,25 @@ impl<'a> Mqtt<'a> {
             ..MqttClientConfiguration::default()
         };
 
+        let (client, connection) = EspMqttClient::new(url, &config).unwrap();
+
         return Self {
-            config,
-            url,
             topic: None,
-            client: None,
+            client,
+            connection,
         };
     }
 
-    pub fn connect<F>(mut self, callback: F) -> Self
-    where
-        F: for<'b> FnMut(EspMqttEvent<'b>) + Send + 'static,
-    {
-        let client = EspMqttClient::new_cb(self.url, &self.config, callback).unwrap();
+    // pub fn connect<F>(mut self, callback: F) -> Self
+    // where
+    //     F: for<'b> FnMut(EspMqttEvent<'b>) + Send + 'static,
+    // {
+    //     let client = EspMqttClient::new_cb(self.url, &self.config, callback).unwrap();
 
-        self.client = Some(client);
+    //     self.client = Some(client);
 
-        return self;
-    }
+    //     return self;
+    // }
 
     pub fn topic(mut self, topic: &'a str) -> Self {
         self.topic = Some(topic);
@@ -40,32 +43,20 @@ impl<'a> Mqtt<'a> {
     }
 
     pub fn subscribe(&mut self) -> Result<(), ()> {
-        if let Some(client) = &mut self.client {
-            client
-                .subscribe(self.topic.unwrap(), QoS::AtMostOnce)
-                .unwrap();
-        } else {
-            log::error!("MQTT client not initialized");
-            return Err(());
-        }
+        self.client.subscribe(self.topic.unwrap(), QoS::AtMostOnce);
 
         return Ok(());
     }
 
     pub fn publish(&mut self, payload: &str) -> Result<(), ()> {
-        if let Some(client) = &mut self.client {
-            client
-                .enqueue(
-                    self.topic.unwrap(),
-                    QoS::AtMostOnce,
-                    false,
-                    payload.as_bytes(),
-                )
-                .unwrap();
-        } else {
-            log::error!("MQTT client not initialized");
-            return Err(());
-        }
+        self.client
+            .enqueue(
+                self.topic.unwrap(),
+                QoS::AtMostOnce,
+                false,
+                payload.as_bytes(),
+            )
+            .unwrap();
 
         return Ok(());
     }
