@@ -1,8 +1,4 @@
-use esp_idf_hal::{
-    gpio::{Output, PinDriver, Pins as EspPins},
-    modem::Modem,
-    prelude::Peripherals,
-};
+use esp_idf_hal::gpio::{Output, PinDriver, Pins as EspPins};
 
 pub struct Pins {
     pub water_pump: PinDriver<'static, esp_idf_hal::gpio::Gpio12, Output>,
